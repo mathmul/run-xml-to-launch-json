@@ -58,7 +58,8 @@ export function activate(context: ExtensionContext) {
 				};
 
 			} else {
-				launch = JSON.parse(fs.readFileSync(launchfile, 'utf-8'));
+				const content = fs.readFileSync(launchfile, 'utf-8');
+				launch = JSON.parse(content);
 				for (const l of launch['configurations']) {
 					launchConfigurations.set(l['name'], l);	
 				}
@@ -70,12 +71,17 @@ export function activate(context: ExtensionContext) {
 				const config = run.component.configuration[0];
 				const typeOfLaunch = String(config['$'].type).toLowerCase();
 				const factoryName = String(config['$'].factoryName).toLowerCase();
+				const options: { [key: string]: string } = {};
+				for (const option of config.option) {
+					options[String(option['$'].name)] = option['$'].value;
+				}
 				const l: any = {
 					"name": config['$'].name,
 					"type": factoryName,
 					"request": "launch",
 					"console": "integratedTerminal",
-					"args": []
+					"args": [],
+					"env": new Map<string, string>()
 				};
 				if (typeOfLaunch === 'tests') {
 					const module = typeOfLaunch;
@@ -92,6 +98,18 @@ export function activate(context: ExtensionContext) {
 					// console.log(config['command'][0]['$'].value);
 					// l['command'] = 'npm ' + config['command'][0]['$'].value;
 					// l['type'] = 'node-terminal';
+				}
+				if (typeOfLaunch.includes("flask")) {
+					l["jinja"] = true;
+					l["justMyCode"] = true;
+					l["module"] = "flask";
+					l["type"] = "debugpy";
+					l["args"] = ["run"];
+					l["env"]["FLASK_DEBUG"] = options["flaskDebug"] ? "1" : "0";
+					l["env"]["FLASK_APP"] = options["target"];
+					if (options["flaskDebug"]) {
+						l["env"]["FLASK_ENV"] = "development";
+					}
 				}
 				config.option?.forEach((config: any) => {
 					if (config['$'].name === 'WORKING_DIRECTORY') {
@@ -112,6 +130,8 @@ export function activate(context: ExtensionContext) {
 					if (config['$'].name === 'PARAMETERS') {
 						const param = replacePaths(config['$'].value);
 						if (param.length > 0) {
+
+							l['args'].concat(param.split(' '));
 							l['args'].push(param);
 						}
 					}
@@ -121,11 +141,15 @@ export function activate(context: ExtensionContext) {
 					}
 				});
 
-				const envs = new Map<string, string>();
-				config?.envs[0]?.env?.forEach((env: any) => {
-					envs.set(env['$'].name, env['$'].value);
-				});
-				l['env'] = Object.fromEntries(envs);
+				if (config?.envs) {
+					const envs = new Map<string, string>();
+					config?.envs[0]?.env?.forEach((env: any) => {
+						envs.set(env['$'].name, env['$'].value);
+					});
+					for (const [name, value] of envs) {
+						l['env'][name] = value;
+					}
+				}
 				launchConfigurations.set(config['$'].name, l);
 			}
 			launch['configurations'] = Array.from(launchConfigurations.values());

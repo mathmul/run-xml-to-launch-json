@@ -2,7 +2,7 @@
 	"name": "run-xml-to-launch-json",
 	"displayName": "run.xml to launch.json",
 	"description": "Convert JetBrains run.xml files to VSCode launch.json entries",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "sio2boss",
 	"private": false,
 	"license": "MIT",

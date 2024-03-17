@@ -14,5 +14,15 @@ Cmd-Shift-D to show "Run and Debug" sidebar.
 
 ## How to run locally
 
+
 * `npm run compile` to start the compiler in watch mode
 * open this folder in VS Code and press `F5`
+
+## How to package for release
+
+```
+npm install -g @vscode/vsce
+vsce package
+open https://dev.azure.com # and make PAT
+vsce publish
+```
