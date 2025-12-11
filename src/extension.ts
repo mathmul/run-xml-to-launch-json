@@ -35,9 +35,14 @@ export function activate(context: ExtensionContext) {
 			const runmap = new Map<string, any>();
 			const folderUri: vscode.Uri = vscode.Uri.file(path.join(workspaceDir, '.run'));
 			for (const [name, type] of await vscode.workspace.fs.readDirectory(folderUri)) {
+				if (!name.endsWith('.run.xml')) continue;
 				const content = fs.readFileSync(path.join(workspaceDir, '.run', name), 'utf-8');
 				const parser = new xml2js.Parser();
 				parser.parseString(content, (err, result) => {
+			        if (err) {
+			            console.error(`Skipping invalid XML: ${name}`, err);
+			            return;
+			        }
 					runmap.set(name, result);
 				});
 			}
@@ -169,3 +174,4 @@ export function activate(context: ExtensionContext) {
 
 	}));
 }
+
